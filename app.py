@@ -46,7 +46,7 @@ units = {
         'US Gallon': 0.00378541,
         'US Quart': 0.000946353,
         'US Pint': 0.000473176,
-        'Us fluid ounce': 2.95735e-5,
+        'US Fluid Ounce': 2.95735e-5,
     },
 
     # Mass Conversion Units
@@ -87,7 +87,7 @@ units = {
     'Acceleration': {
         'Meter/SecondSquare': 1,
         'Kilometer/HourSquare': 0.0000771605,
-        'Centimeter /SecondSquare': 0.01,
+        'Centimeter/SecondSquare': 0.01,
         'Foot/SecondSquare': 0.3048,
         'Gravity': 9.80665,
     },
@@ -138,7 +138,7 @@ units = {
     'Voltage': {
         'Volt': 1,
         'Kilovolt': 1000,
-        'Milivolt': 1e-3,
+        'Millivolt': 1e-3,
     },
 
     # Data Conversion Units
@@ -161,29 +161,45 @@ units = {
 }
 
 def convert_quantity(quantity, value, from_unit, to_unit):
-    if quantity == 'Temperature':  # Fixed case sensitivity
+    if quantity == 'Temperature':
         if from_unit == 'Celsius' and to_unit == 'Fahrenheit':
             return round(value * 9 / 5 + 32, 3)
         elif from_unit == 'Fahrenheit' and to_unit == 'Celsius':
-            return round((value - 32) * 5 / 9, 3)  # Fixed incorrect parenthesis
+            return round((value - 32) * 5 / 9, 3)
         elif from_unit == 'Celsius' and to_unit == 'Kelvin':
             return round(value + 273.15, 3)
         elif from_unit == 'Kelvin' and to_unit == 'Celsius':
-            return round(value - 273.15, 3)  # Fixed incorrect parenthesis
+            return round(value - 273.15, 3)
         elif from_unit == 'Kelvin' and to_unit == 'Fahrenheit':
             return round((value * 9 / 5) - 459.67, 3)
         elif from_unit == 'Fahrenheit' and to_unit == 'Kelvin':
             return round((value + 459.67) * 5 / 9, 3)
     else:
-        return value * units[quantity][from_unit] / units[quantity][to_unit]
+        return round(value * units[quantity][from_unit] / units[quantity][to_unit], 6)
 
+def quantity_changed(e):  # functions to change the options of unit dropdown according to the dropdown quantity
+    main.content.controls[5].content.options = [dropdown.Option(u) for u in units[e.control.value].keys()]
+    main.content.controls[6].content.options = [dropdown.Option(u) for u in units[e.control.value].keys()]
+    e.page.update()
 
 def submit(e):
-   ...
-def swap_units(e): # function to swap input and output units
-   ...
+    quantity = main.content.controls[3].content.value
+    from_unit = main.content.controls[5].content.value
+    to_unit = main.content.controls[6].content.value
+    input_value = float(main.content.controls[8].content.value)
+    output_value = convert_quantity(quantity, input_value, from_unit, to_unit)
+    main.content.controls[9].content.value = str(output_value)
+    e.page.update()  # Use e.page to access the page object
+
+def swap_units(e):  # function to swap input and output units
+    input_unit = main.content.controls[5].content.value
+    output_unit = main.content.controls[6].content.value
+    main.content.controls[5].content.value = output_unit
+    main.content.controls[6].content.value = input_unit
+    e.page.update()  # Use e.page to access the page object
 
 def main(page: Page):
+    global main
     page.horizontal_alignment = 'center'
     page.vertical_alignment = 'center'
     page.window_width = 500
@@ -192,6 +208,12 @@ def main(page: Page):
     page.window_min_height = 610
     page.padding = 20
     page.bgcolor = 'green50'
+
+    page.appbar = AppBar(
+        title=Text('Unit Converter', color='black', size=25, weight=FontWeight.BOLD),
+        center_title=True,
+        bgcolor='green300',
+    )
 
     # Create a Container with a Stack and Cards
     main = Container(
@@ -225,15 +247,13 @@ def main(page: Page):
                         width=180,
                         focused_border_color='black',
                         value='Length',
+                        on_change=quantity_changed,
                     ),
                     top=34,
                     left=53,
                 ),
                 FloatingActionButton(
-                    content=Text(
-                        'convert',
-                        size=20,
-                    ),
+                    content=Text('Convert', size=20),
                     top=28.8,
                     left=265,
                     bgcolor='green300',
@@ -242,23 +262,7 @@ def main(page: Page):
                     shape=RoundedRectangleBorder(radius=6),
                     on_click=submit,
                 ),
-
-                 Container(
-                    content=Dropdown(
-                        options=[dropdown.Option(u) for u in units['Length'].keys()],
-                        label='Input Unit',
-                        label_style=TextStyle(color='black'),
-                        dense=True,
-                        scale=1.2,
-                        width=280,
-                        focused_border_color='black',
-                        value='Meter',
-                    ),
-                    top=206,
-                    left=63,
-                ),
-
-                    Container(
+                Container(
                     content=Dropdown(
                         options=[dropdown.Option(u) for u in units['Length'].keys()],
                         label='Input Unit',
@@ -272,39 +276,60 @@ def main(page: Page):
                     top=136,
                     left=63,
                 ),
+                Container(
+                    content=Dropdown(
+                        options=[dropdown.Option(u) for u in units['Length'].keys()],
+                        label='Output Unit',
+                        label_style=TextStyle(color='black'),
+                        dense=True,
+                        scale=1.2,
+                        width=280,
+                        focused_border_color='black',
+                        value='Kilometer',
+                    ),
+                    top=206,
+                    left=63,
+                ),
                 IconButton(
-                    icon=icons.SWAP_VERT,
+                    icon=Icons.SWAP_VERT,  # Updated to use Icons enum
                     icon_size=35,
                     icon_color='black',
                     top=166,
                     left=373,
                     on_click=swap_units,
                 ),
-                Container(TextField(
-                    label= 'Input Value',
-                    label_style=TextStyle(color='black'),
-                    width=310,
-                    scale=1.2,
-                    dense=True,
-                    focused_border_color='black',
-                    cursor_color='black',
-                    text_align='center',
-                    on_submit=submit,
-                ), top=309 , left=68),
-
-                Container(TextField(
-                    label= 'Input Value',
-                    value='---',
-                    label_style=TextStyle(color='black'),
-                    width=310,
-                    scale=1.2,
-                    dense=True,
-                    focused_border_color='black',
-                    cursor_color='black',
-                    text_align='center',
-                    read_only=True,
-                    on_submit=submit,
-                ), top=382, left=68),
+                Container(
+                    content=TextField(
+                        label='Input Value',
+                        label_style=TextStyle(color='black'),
+                        width=310,
+                        scale=1.2,
+                        dense=True,
+                        focused_border_color='black',
+                        cursor_color='black',
+                        text_align='center',
+                        on_submit=submit,
+                    ),
+                    top=309,
+                    left=68,
+                ),
+                Container(
+                    content=TextField(
+                        label='Output Value',
+                        value='---',
+                        label_style=TextStyle(color='black'),
+                        width=310,
+                        scale=1.2,
+                        dense=True,
+                        focused_border_color='black',
+                        cursor_color='black',
+                        text_align='center',
+                        read_only=True,
+                        on_submit=submit,
+                    ),
+                    top=382,
+                    left=68,
+                ),
             ]
         ),
         width=450,
@@ -316,7 +341,6 @@ def main(page: Page):
 
     # Add the Container to the page
     page.add(main)
-
 
 # Run the app in a browser
 app(target=main, view=WEB_BROWSER)
