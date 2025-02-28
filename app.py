@@ -1,5 +1,6 @@
-from flet import *
+import streamlit as st
 
+# Define the units dictionary (same as before)
 units = {
     # Length Conversion Units
     'Length': {
@@ -160,6 +161,7 @@ units = {
     },
 }
 
+# Function to perform unit conversion (same as before)
 def convert_quantity(quantity, value, from_unit, to_unit):
     if quantity == 'Temperature':
         if from_unit == 'Celsius' and to_unit == 'Fahrenheit':
@@ -177,170 +179,34 @@ def convert_quantity(quantity, value, from_unit, to_unit):
     else:
         return round(value * units[quantity][from_unit] / units[quantity][to_unit], 6)
 
-def quantity_changed(e):  # functions to change the options of unit dropdown according to the dropdown quantity
-    main.content.controls[5].content.options = [dropdown.Option(u) for u in units[e.control.value].keys()]
-    main.content.controls[6].content.options = [dropdown.Option(u) for u in units[e.control.value].keys()]
-    e.page.update()
+# Streamlit App
+def main():
+    st.title("Unit Converter")
+    st.write("Convert between different units of measurement.")
 
-def submit(e):
-    quantity = main.content.controls[3].content.value
-    from_unit = main.content.controls[5].content.value
-    to_unit = main.content.controls[6].content.value
-    input_value = float(main.content.controls[8].content.value)
-    output_value = convert_quantity(quantity, input_value, from_unit, to_unit)
-    main.content.controls[9].content.value = str(output_value)
-    e.page.update()  # Use e.page to access the page object
+    # Dropdown to select quantity
+    quantity = st.selectbox("Select Quantity", list(units.keys()))
 
-def swap_units(e):  # function to swap input and output units
-    input_unit = main.content.controls[5].content.value
-    output_unit = main.content.controls[6].content.value
-    main.content.controls[5].content.value = output_unit
-    main.content.controls[6].content.value = input_unit
-    e.page.update()  # Use e.page to access the page object
+    # Dropdowns to select input and output units
+    col1, col2 = st.columns(2)
+    with col1:
+        from_unit = st.selectbox("From Unit", list(units[quantity].keys()))
+    with col2:
+        to_unit = st.selectbox("To Unit", list(units[quantity].keys()))
 
-def main(page: Page):
-    global main
-    page.horizontal_alignment = 'center'
-    page.vertical_alignment = 'center'
-    page.window_width = 500
-    page.window_height = 610
-    page.window_min_width = 500
-    page.window_min_height = 610
-    page.padding = 20
-    page.bgcolor = 'green50'
+    # Input field for value
+    input_value = st.number_input("Enter Value", value=1.0)
 
-    page.appbar = AppBar(
-        title=Text('Unit Converter', color='black', size=25, weight=FontWeight.BOLD),
-        center_title=True,
-        bgcolor='green300',
-    )
+    # Button to perform conversion
+    if st.button("Convert"):
+        output_value = convert_quantity(quantity, input_value, from_unit, to_unit)
+        st.success(f"Converted Value: {output_value}")
 
-    # Create a Container with a Stack and Cards
-    main = Container(
-        content=Stack(
-            [
-                Card(
-                    width=420,
-                    height=95,
-                    color='green100',
-                    margin=Margin(top=11, left=14, right=0, bottom=0),
-                ),
-                Card(
-                    width=420,
-                    height=170,
-                    color='green100',
-                    margin=Margin(top=109, left=14, right=0, bottom=0),
-                ),
-                Card(
-                    width=420,
-                    height=175,
-                    color='green100',
-                    margin=Margin(top=282, left=14, right=0, bottom=0),
-                ),
-                Container(
-                    content=Dropdown(
-                        options=[dropdown.Option(u) for u in units.keys()],
-                        label='Select Quantity',
-                        label_style=TextStyle(color='black'),
-                        dense=True,
-                        scale=1.2,
-                        width=180,
-                        focused_border_color='black',
-                        value='Length',
-                        on_change=quantity_changed,
-                    ),
-                    top=34,
-                    left=53,
-                ),
-                FloatingActionButton(
-                    content=Text('Convert', size=20),
-                    top=28.8,
-                    left=265,
-                    bgcolor='green300',
-                    width=150,
-                    height=58.5,
-                    shape=RoundedRectangleBorder(radius=6),
-                    on_click=submit,
-                ),
-                Container(
-                    content=Dropdown(
-                        options=[dropdown.Option(u) for u in units['Length'].keys()],
-                        label='Input Unit',
-                        label_style=TextStyle(color='black'),
-                        dense=True,
-                        scale=1.2,
-                        width=280,
-                        focused_border_color='black',
-                        value='Meter',
-                    ),
-                    top=136,
-                    left=63,
-                ),
-                Container(
-                    content=Dropdown(
-                        options=[dropdown.Option(u) for u in units['Length'].keys()],
-                        label='Output Unit',
-                        label_style=TextStyle(color='black'),
-                        dense=True,
-                        scale=1.2,
-                        width=280,
-                        focused_border_color='black',
-                        value='Kilometer',
-                    ),
-                    top=206,
-                    left=63,
-                ),
-                IconButton(
-                    icon=Icons.SWAP_VERT,  # Updated to use Icons enum
-                    icon_size=35,
-                    icon_color='black',
-                    top=166,
-                    left=373,
-                    on_click=swap_units,
-                ),
-                Container(
-                    content=TextField(
-                        label='Input Value',
-                        label_style=TextStyle(color='black'),
-                        width=310,
-                        scale=1.2,
-                        dense=True,
-                        focused_border_color='black',
-                        cursor_color='black',
-                        text_align='center',
-                        on_submit=submit,
-                    ),
-                    top=309,
-                    left=68,
-                ),
-                Container(
-                    content=TextField(
-                        label='Output Value',
-                        value='---',
-                        label_style=TextStyle(color='black'),
-                        width=310,
-                        scale=1.2,
-                        dense=True,
-                        focused_border_color='black',
-                        cursor_color='black',
-                        text_align='center',
-                        read_only=True,
-                        on_submit=submit,
-                    ),
-                    top=382,
-                    left=68,
-                ),
-            ]
-        ),
-        width=450,
-        height=472,
-        bgcolor='green50',
-        border_radius=15,
-        shadow=BoxShadow(spread_radius=2, blur_radius=9, color='bluegrey300'),
-    )
+    # Button to swap units
+    if st.button("Swap Units"):
+        from_unit, to_unit = to_unit, from_unit
+        st.experimental_rerun()
 
-    # Add the Container to the page
-    page.add(main)
-
-# Run the app in a browser
-app(target=main, view=WEB_BROWSER)
+# Run the Streamlit app
+if __name__ == "__main__":
+    main()
